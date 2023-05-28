@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Security.Principal;
@@ -12,7 +14,27 @@ public partial class CellNode : CharacterBody2D
 	public const float Radius = 16.0f;
 	public const float MinBetweenSatelliteDistance = 4.0f;
 	public const float OrbitIncrement = 8.0f;
-	
+	public const float MinOrbitOffset = 16.0f;
+
+	public const uint NeutralBitMask = 1;
+	public const uint PlayerBitMask = 1 << 1;
+	public const uint EnemyBitMask = 1 << 2;
+
+	public enum Team
+	{
+		Neutral,
+		Player,
+		Enemy,
+	}
+
+	public Godot.Collections.Dictionary<Team, uint> TeamMasks = new Godot.Collections.Dictionary<Team, uint>()
+	{
+		{Team.Neutral, NeutralBitMask},
+		{Team.Player, PlayerBitMask},
+		{Team.Enemy, EnemyBitMask},
+	};
+
+
 	public enum ConnectionType {
 		Orbit,
 		Fixed,
@@ -29,7 +51,9 @@ public partial class CellNode : CharacterBody2D
 	[ExportCategory("Cell Properties")]
 	[Export] public float RigidityFactor { get; set; } = 1.0f;
 	[Export] public ConnectionType LeafConnectionType { get; set; } = ConnectionType.Fixed;
-	
+	[Export] public int MaximumSatellites { get; set; } = 1;
+	[Export(PropertyHint.MultilineText)] public string SeedDescription { get; set; } = String.Empty;
+
 	public CellNode CellParent
 	{
 		get => _cellParent;
@@ -39,6 +63,7 @@ public partial class CellNode : CharacterBody2D
 			{
 				_cellParent.CellChildren.Remove(this);
 				_cellParent.UpdateAngle();
+				TeamOwner = Team.Neutral;
 			}
 			LinkLine.Visible = false;
 			LinkLine.Modulate = LinkLine.Modulate with { A = 0.0f };
@@ -49,9 +74,30 @@ public partial class CellNode : CharacterBody2D
 				_cellParent.UpdateAngle();
 				LinkLine.Visible = true;
 				LinkLine.Modulate = LinkLine.Modulate with { A = 0.3f };
+				TeamOwner = _cellParent.TeamOwner;
 			}
 			UpdateAngle();
 			UpdateHeight();
+		}
+	}
+	public Team TeamOwner
+	{
+		get => _teamOwner;
+		set {
+			_teamOwner = value;
+			this.CollisionLayer = TeamMasks[_teamOwner];
+			this.CollisionMask = 0;
+			foreach (KeyValuePair<Team, uint> pair in TeamMasks)
+			{
+				if (pair.Key != _teamOwner)
+				{
+					this.CollisionMask = CollisionMask ^ pair.Value;
+				}
+			}
+			foreach (var cellChild in CellChildren)
+			{
+				cellChild.TeamOwner = _teamOwner;
+			}
 		}
 	}
 
@@ -123,9 +169,9 @@ public partial class CellNode : CharacterBody2D
 	public Vector2 Velocity { get; set; } = Vector2.Zero;
 
 	private CellNode _cellParent;
+	private Team _teamOwner = Team.Neutral;
 	public float AngleRange { get; private set; } = 360.0f;
 	public float AngleRangeOffset { get; private set; } = 0.0f;
-	public const float MinOrbitOffset = 16.0f;
 	public float OrbitDistance { get; set; } = Radius * 2.0f + MinOrbitOffset;
 
 	public override void _Ready()
@@ -136,12 +182,16 @@ public partial class CellNode : CharacterBody2D
 			hoverArea.MouseEntered += MouseEnter;
 			hoverArea.MouseExited += MouseExit;
 		}
+		
+		this.Modulate = this.Modulate with { A = 0.0f };
+		var tw = CreateTween();
+		tw.TweenProperty(this, "modulate:a", 1.0f, 0.25f);
 	}
 
 	private void MouseEnter()
 	{
-		Root.Instance.HoveredCell = this;
-		GD.Print("Hover!!");
+		if(Root.Instance.CurrentMode == Root.GameMode.Fusion)
+			Root.Instance.HoveredCell = this;
 	}
 	
 	private void MouseExit()

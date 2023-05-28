@@ -7,7 +7,7 @@
 [ext_resource type="Texture2D" uid="uid://b0d7ov1iogvyw" path="res://assets/textures/bg2.png" id="5_v528y"]
 [ext_resource type="PackedScene" uid="uid://fpyq608lfjju" path="res://assets/scenes/seed.tscn" id="6_bjg5t"]
 
-[node name="root" type="Control" node_paths=PackedStringArray("MainCamera")]
+[node name="root" type="Control" node_paths=PackedStringArray("MainCamera", "SeedContainer")]
 process_mode = 3
 layout_mode = 3
 anchors_preset = 15
@@ -18,6 +18,8 @@ grow_vertical = 2
 script = ExtResource("1_32avw")
 RootCellTemplate = ExtResource("2_qsd4v")
 MainCamera = NodePath("Camera2D")
+SeedTemplate = ExtResource("6_bjg5t")
+SeedContainer = NodePath("CanvasLayer/Control/HBoxContainer")
 
 [node name="ParallaxBackground" type="ParallaxBackground" parent="."]
 
@@ -55,9 +57,6 @@ texture = ExtResource("4_5osri")
 region_enabled = true
 region_rect = Rect2(0, 0, 576000, 324000)
 
-[node name="Cell" parent="." instance=ExtResource("2_qsd4v")]
-position = Vector2(-74, 0)
-
 [node name="Camera2D" type="Camera2D" parent="."]
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
@@ -78,7 +77,3 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-
-[node name="Seed2" parent="CanvasLayer/Control/HBoxContainer" instance=ExtResource("6_bjg5t")]
-visible = false
-layout_mode = 2

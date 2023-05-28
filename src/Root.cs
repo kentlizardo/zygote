@@ -1,12 +1,12 @@
 using Godot;
 using System;
-using System.Collections;
 using Godot.Collections;
 using zygote.game;
 using Array = Godot.Collections.Array;
 
 public partial class Root : Control
 {
+	public static readonly string[] Seeds = {"life"};
 	public enum GameMode
 	{
 		Startup,
@@ -19,8 +19,18 @@ public partial class Root : Control
 
 	[Export] public PackedScene RootCellTemplate = null;
 	[Export] public Camera2D MainCamera { get; set; }
+	[Export] public PackedScene SeedTemplate = null;
+	[Export] public HBoxContainer SeedContainer = null;
 
-	public CellNode RootCell { get; set; } = null;
+	public CellNode RootCell
+	{
+		get => _rootCell;
+		set
+		{
+			_rootCell = value;
+			_rootCell.TeamOwner = CellNode.Team.Player;
+		}
+	}
 
 	public GameMode CurrentMode
 	{
@@ -33,6 +43,7 @@ public partial class Root : Control
 				case GameMode.Startup:
 					break;
 				case GameMode.SeedSelection:
+					SeedSelect();
 					break;
 				case GameMode.Fusion:
 					break;
@@ -44,7 +55,61 @@ public partial class Root : Control
 		}
 	}
 
+	public void SeedSelect()
+	{
+		Array<CellNode> nodes = new();
+		GetNodes(RootCell, ref nodes);
+		int treeLevel = nodes.Count;
+		if (treeLevel == 0)
+		{
+			CreateSeed("life");
+		}
+		else
+		{
+			Array<string> choices = new();
+			for(uint i = 0; i < 3; i++)
+				choices.Add(Seeds[GD.Randi() % Seeds.Length]);
+			foreach(var choice in choices)
+				CreateSeed(choice);
+		}
+	}
+
+	private void CreateSeed(string seedName)
+	{
+		var seed = SeedTemplate.Instantiate() as Seed;
+		SeedContainer?.AddChild(seed);
+		seed.LoadSeed(seedName);
+	}
+
 	public double ElapsedTime { get; set; } = 0.0f;
+
+	public CellNode GraftedCell
+	{
+		get => _graftedCell;
+		set
+		{
+			foreach(var child in SeedContainer.GetChildren().Duplicate())
+			{
+				if(child is Seed seed)
+					seed.Destroy();
+			}
+			_graftedCell = value;
+			if (_graftedCell is not null)
+			{
+				if (RootCell is null)
+				{
+					this.AddChild(_graftedCell);
+					RootCell = _graftedCell;
+					_graftedCell = null;
+					CurrentMode = GameMode.Battle;
+				}
+				else
+				{
+					CurrentMode = GameMode.Fusion;
+				}
+			}
+		}
+	}
 
 	public CellNode HoveredCell
 	{
@@ -67,20 +132,53 @@ public partial class Root : Control
 			}
 		} 
 	}
-	
+
+	public bool TreePaused
+	{
+		get => _treePaused;
+		set
+		{
+			_treePaused = value;
+			GD.Print(_treePaused);
+			GetTree().Paused = _treePaused;
+		}
+	}
+
+	public bool AppPaused
+	{
+		get => _appPaused;
+		set
+		{
+			_appPaused = value;
+			TreePaused = AppPaused || GamePaused;
+		}
+	}
+
+	public bool GamePaused
+	{
+		get => _gamePaused;
+		set
+		{
+			_gamePaused = value;
+			TreePaused = AppPaused || GamePaused;
+		}
+	}
+
 	private CellNode _hoveredCell;
+	private CellNode _graftedCell;
 	private GameMode _currentMode;
+	private CellNode _rootCell = null;
+	private bool _gamePaused;
+	private bool _treePaused;
+	private bool _appPaused;
 
 	public Root()
 	{
 		Instance = this;
 	}
-	
+
 	public override void _Ready()
 	{
-		RootCell = RootCellTemplate.Instantiate() as CellNode;
-		this.AddChild(RootCell, true);
-
 		CurrentMode = GameMode.Startup;
 		for (int i = 0; i < 40; i++)
 		{
@@ -117,10 +215,33 @@ public partial class Root : Control
 		if (RootCell != null)
 			if (MainCamera is not null)
 				MainCamera.Position = MainCamera.Position.Lerp(RootCell.Position, 0.8f);
+		switch (CurrentMode)
+		{
+			case GameMode.Startup:
+				if (Input.IsActionJustPressed("ui_accept"))
+					CurrentMode = GameMode.SeedSelection;
+				break;
+			case GameMode.Fusion:
+				if (Input.IsActionJustPressed("click"))
+				{
+					GD.Print("Pressed!");
+					if (HoveredCell is not null)
+					{
+						this.AddChild(_graftedCell);
+						_graftedCell.CellParent = HoveredCell;
+						HoveredCell = null;
+						CurrentMode = GameMode.Battle;
+					}
+				}
+				break;
+		}
 		if (Input.IsActionJustPressed("ui_cancel"))
 		{
-			GetTree().Paused = !GetTree().Paused;
-			GD.Print(GetTree().Paused);
+			AppPaused = !AppPaused;
+		}
+		if (Input.IsActionJustPressed("ui_page_down"))
+		{
+			CurrentMode = GameMode.SeedSelection;
 		}
 	}
 	private void GetNodes(CellNode cell, ref Array<CellNode> array)
@@ -152,6 +273,7 @@ public partial class Root : Control
 
 	public override void _PhysicsProcess(double delta)
 	{
+		if (TreePaused) return;
 		if (CurrentMode == GameMode.Battle)
 		{
 			//_rootCell.Acceleration = Input.GetAxis("ui_down", "ui_up") * Vector2.Right.Rotated(_rootCell.Rotation) * 100.0f;
