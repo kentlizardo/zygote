@@ -90,6 +90,8 @@ theme_override_font_sizes/normal_font_size = 20
 bbcode_enabled = true
 text = "[center]life planet seed
 
+health: 1
+damage: 0
 max satellites: 8
 orbit strength: 100%
 leaf connection: freely orbitting

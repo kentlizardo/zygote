@@ -31,6 +31,20 @@ public partial class Root : Control
 			_rootCell.TeamOwner = CellNode.Team.Player;
 		}
 	}
+	
+	public CellNode RootEnemy
+	{
+		get => _rootEnemy;
+		set
+		{
+			if (_rootEnemy is not null && value is null)
+			{
+				CurrentMode = GameMode.SeedSelection;
+			}
+			_rootEnemy = value;
+			_rootEnemy.TeamOwner = CellNode.Team.Enemy;
+		}
+	}
 
 	public GameMode CurrentMode
 	{
@@ -48,6 +62,7 @@ public partial class Root : Control
 				case GameMode.Fusion:
 					break;
 				case GameMode.Battle:
+					CreateEnemy();
 					break;
 				case GameMode.Lose:
 					break;
@@ -55,8 +70,60 @@ public partial class Root : Control
 		}
 	}
 
-	public void SeedSelect()
+	private void CreateEnemy()
 	{
+		Array<CellNode> playerNodes = new();
+		GetNodes(RootCell, ref playerNodes);
+		int playerLevel = playerNodes.Count;
+
+		var randomLeaf = Seeds[GD.Randi() % Seeds.Length];
+		var cellTemplate = ResourceLoader.Load<PackedScene>("res://assets/scenes/cells/" + randomLeaf + ".tscn");
+		RootEnemy = cellTemplate.Instantiate() as CellNode;
+		
+		var pos = RootCell.GlobalPosition + Vector2.FromAngle(Mathf.Tau * GD.Randf()) * (GD.Randf() * 1024 + 512);
+		if (RootEnemy != null)
+		{
+			RootEnemy.GlobalPosition = pos;
+
+			this.AddChild(RootEnemy);
+		}
+
+		for (int i = 0; i < playerLevel; i++)
+		{
+			GraftEnemy();
+		}
+	}
+
+	private void GraftEnemy()
+	{
+		Array<CellNode> nodes = new Array<CellNode>();
+		GetNodes(RootEnemy, ref nodes);
+		
+		var newParent = nodes.PickRandom();
+		
+		var randomLeaf = Seeds[GD.Randi() % Seeds.Length];
+		var cellTemplate = ResourceLoader.Load<PackedScene>("res://assets/scenes/cells/" + randomLeaf + ".tscn");
+		var newCell = cellTemplate.Instantiate() as CellNode;
+		if (newParent != RootEnemy)
+		{
+			newCell.GlobalPosition = newParent.GlobalPosition + Vector2.FromAngle(GD.Randf() * Mathf.Tau) * 128.0f;
+		}
+		else
+		{
+			newCell.GlobalPosition = newParent.GlobalPosition + (newParent.GlobalPosition - RootEnemy.GlobalPosition).Normalized() * 128.0f;
+		}
+		this.AddChild(newCell);
+		newCell.CellParent = newParent;
+	}
+
+	public async void SeedSelect()
+	{
+		if (SeedContainer.GetChildren().Count > 0)
+		{
+			while (SeedContainer.GetChildren().Count != 0)
+				await ToSignal(GetTree(), "process_frame");
+		}
+		
 		Array<CellNode> nodes = new();
 		GetNodes(RootCell, ref nodes);
 		int treeLevel = nodes.Count;
@@ -78,7 +145,7 @@ public partial class Root : Control
 	{
 		var seed = SeedTemplate.Instantiate() as Seed;
 		SeedContainer?.AddChild(seed);
-		seed.LoadSeed(seedName);
+		if (seed != null) seed.LoadSeed(seedName);
 	}
 
 	public double ElapsedTime { get; set; } = 0.0f;
@@ -101,7 +168,8 @@ public partial class Root : Control
 					this.AddChild(_graftedCell);
 					RootCell = _graftedCell;
 					_graftedCell = null;
-					CurrentMode = GameMode.Battle;
+					
+					CurrentMode = GameMode.SeedSelection;
 				}
 				else
 				{
@@ -168,6 +236,7 @@ public partial class Root : Control
 	private CellNode _graftedCell;
 	private GameMode _currentMode;
 	private CellNode _rootCell = null;
+	private CellNode _rootEnemy = null;
 	private bool _gamePaused;
 	private bool _treePaused;
 	private bool _appPaused;
@@ -180,35 +249,8 @@ public partial class Root : Control
 	public override void _Ready()
 	{
 		CurrentMode = GameMode.Startup;
-		for (int i = 0; i < 40; i++)
-		{
-			//RandomBranch(RootCell);
-		}
 	}
 
-	public void RandomBranch(CellNode tree)
-	{
-		Array<CellNode> all = new();
-		GetNodes(tree, ref all);
-		var newParent = all.PickRandom();
-		while (newParent.TreeHeight >= 3)
-		{
-			newParent = all.PickRandom();
-		}
-		newParent.RotationDegrees = GD.Randf() * 360.0f;
-		GraftNewNode(newParent);
-		
-	}
-	
-	public void GraftNewNode(CellNode parentNode = null)
-	{
-		var subNode = RootCellTemplate.Instantiate() as CellNode;
-		subNode.CellSprite.Modulate = subNode.CellSprite.Modulate with { A = 1.0f };
-		this.AddChild(subNode, true);
-		if(parentNode != null)
-			subNode.CellParent = parentNode;
-	}
-	
 	public override void _Process(double delta)
 	{
 		ElapsedTime += delta;
@@ -227,6 +269,10 @@ public partial class Root : Control
 					GD.Print("Pressed!");
 					if (HoveredCell is not null)
 					{
+						if (RootCell != null)
+							_graftedCell.GlobalPosition = RootCell.GlobalPosition +
+							                              Vector2.FromAngle(GD.Randf() * Mathf.Tau) * GD.Randf() *
+							                              256.0f;
 						this.AddChild(_graftedCell);
 						_graftedCell.CellParent = HoveredCell;
 						HoveredCell = null;
@@ -280,7 +326,12 @@ public partial class Root : Control
 			//_rootCell.Rotate((float)(Input.GetAxis("ui_left", "ui_right") * delta) * 10.0f);
 			var look = GetGlobalMousePosition() - RootCell.GlobalPosition;
 			RootCell.Rotation = (float)Mathf.LerpAngle(RootCell.Rotation, look.Angle(), 0.1f * delta * 25.0f);
-			RootCell.Acceleration = Input.GetVector("ui_left", "ui_right", "ui_up", "ui_down").Normalized() * 100.0f;
+			RootCell.Drive = Input.GetVector("ui_left", "ui_right", "ui_up", "ui_down").Normalized();
+
+			if (RootEnemy is null) return;
+			var hostile = RootCell.GlobalPosition - RootEnemy.GlobalPosition;
+			RootEnemy.Rotation = (float)Mathf.LerpAngle(RootEnemy.Rotation, hostile.Angle(), 0.1f * delta * 25.0f);
+			RootEnemy.Drive = hostile.Normalized();
 		}
 	}
 }

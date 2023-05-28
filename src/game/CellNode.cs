@@ -11,6 +11,8 @@ namespace zygote.game;
 
 public partial class CellNode : CharacterBody2D
 {
+	public const float MoveSpeed = 50.0f;
+	
 	public const float Radius = 16.0f;
 	public const float MinBetweenSatelliteDistance = 4.0f;
 	public const float OrbitIncrement = 8.0f;
@@ -19,6 +21,8 @@ public partial class CellNode : CharacterBody2D
 	public const uint NeutralBitMask = 1;
 	public const uint PlayerBitMask = 1 << 1;
 	public const uint EnemyBitMask = 1 << 2;
+
+	public const float DamageIFrames = 1.0f;
 
 	public enum Team
 	{
@@ -33,8 +37,7 @@ public partial class CellNode : CharacterBody2D
 		{Team.Player, PlayerBitMask},
 		{Team.Enemy, EnemyBitMask},
 	};
-
-
+	
 	public enum ConnectionType {
 		Orbit,
 		Fixed,
@@ -52,6 +55,23 @@ public partial class CellNode : CharacterBody2D
 	[Export] public float RigidityFactor { get; set; } = 1.0f;
 	[Export] public ConnectionType LeafConnectionType { get; set; } = ConnectionType.Fixed;
 	[Export] public int MaximumSatellites { get; set; } = 1;
+	[Export] public int Damage { get; set; } = 0;
+	[Export] public int Shield { get; set; } = 1;
+
+	[Export]
+	public int Life
+	{
+		get => _life;
+		set
+		{
+			_life = value;
+			if (Life <= 0)
+			{
+				this.Destroy();
+			}
+		}
+	}
+
 	[Export(PropertyHint.MultilineText)] public string SeedDescription { get; set; } = String.Empty;
 
 	public CellNode CellParent
@@ -103,6 +123,16 @@ public partial class CellNode : CharacterBody2D
 
 	public Array<CellNode> CellChildren { get; set; } = new();
 	public int TreeHeight { get; set; } = 0;
+
+	public float InvincibleFrames
+	{
+		get => _invincibleFrames;
+		set
+		{
+			_invincibleFrames = value;
+			this.Modulate = this.Modulate with { A = (DamageIFrames - InvincibleFrames) / DamageIFrames };
+		}
+	}
 
 	private void UpdateHeight()
 	{
@@ -157,19 +187,20 @@ public partial class CellNode : CharacterBody2D
 			AngleRangeOffset = 0.0f;
 			OrbitDistance = Radius * 2.0f + MinOrbitOffset;
 		}
-		GD.Print("Updating children for " + this.Name);
 		foreach (CellNode cellChild in CellChildren)
 		{
-			GD.Print("Updating child " + cellChild.Name);
 			cellChild.UpdateAngle();
 		}
 	}
-	
+
+	public Vector2 Drive { get; set; } = Vector2.Zero;
 	public Vector2 Acceleration { get; set; } = Vector2.Zero;
 	public Vector2 Velocity { get; set; } = Vector2.Zero;
 
 	private CellNode _cellParent;
 	private Team _teamOwner = Team.Neutral;
+	private float _invincibleFrames = 0.0f;
+	private int _life;
 	public float AngleRange { get; private set; } = 360.0f;
 	public float AngleRangeOffset { get; private set; } = 0.0f;
 	public float OrbitDistance { get; set; } = Radius * 2.0f + MinOrbitOffset;
@@ -186,6 +217,8 @@ public partial class CellNode : CharacterBody2D
 		this.Modulate = this.Modulate with { A = 0.0f };
 		var tw = CreateTween();
 		tw.TweenProperty(this, "modulate:a", 1.0f, 0.25f);
+
+		Life = Shield;
 	}
 
 	private void MouseEnter()
@@ -220,6 +253,18 @@ public partial class CellNode : CharacterBody2D
 		{
 			Root.Instance.RootCell = null;
 		}
+		if (Root.Instance.RootEnemy == this)
+		{
+			Root.Instance.RootEnemy = null;
+		}
+		if (Root.Instance.HoveredCell == this)
+		{
+			Root.Instance.HoveredCell = null;
+		}
+		if (Root.Instance.GraftedCell == this)
+		{
+			Root.Instance.HoveredCell = null;
+		}
 		if (CellParent != null)
 		{
 			CellParent.CellChildren.Remove(this);
@@ -242,6 +287,8 @@ public partial class CellNode : CharacterBody2D
 	
 	public override void _PhysicsProcess(double delta)
 	{
+		if(InvincibleFrames > 0.0f)
+			InvincibleFrames -= (float)delta;
 		if (CellParent != null)
 		{
 			var parentPos = CellParent.GlobalPosition;
@@ -295,10 +342,29 @@ public partial class CellNode : CharacterBody2D
 			var targetDist = (targetPosition - this.GlobalPosition);
 			this.Velocity = targetDist.Normalized() * 10.0f * targetDist.Length() * RigidityFactor;
 		}
+		else
+		{
+			this.Acceleration = Drive * MoveSpeed;
+		}
 		this.Velocity += Acceleration * (float)delta;
 		this.Position += Velocity * (float)delta;
 
-		MoveAndCollide(Velocity * (float)delta);
+		var collide = MoveAndCollide(Velocity * (float)delta);
+		if (collide is not null)
+		{
+			if (collide.GetCollider() is CellNode node)
+			{
+				if (TeamOwner != node.TeamOwner)
+				{
+					if (InvincibleFrames <= 0.0f)
+					{
+						GD.Print(TeamOwner + " colliding with " + node.TeamOwner);
+						InvincibleFrames = DamageIFrames;
+						this.Life -= node.Damage;
+					}
+				}
+			}
+		}
 	}
 
 }
