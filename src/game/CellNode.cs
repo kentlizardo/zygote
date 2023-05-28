@@ -131,6 +131,23 @@ public partial class CellNode : CharacterBody2D
 	public override void _Ready()
 	{
 		CellSprite.Texture = ResourceLoader.Load<Texture2D>("res://assets/textures/" + CellType.ToLower() + ".png");
+		if (GetNode("HoverArea") is Area2D hoverArea)
+		{
+			hoverArea.MouseEntered += MouseEnter;
+			hoverArea.MouseExited += MouseExit;
+		}
+	}
+
+	private void MouseEnter()
+	{
+		Root.Instance.HoveredCell = this;
+		GD.Print("Hover!!");
+	}
+	
+	private void MouseExit()
+	{
+		if(Root.Instance.HoveredCell == this)
+			Root.Instance.HoveredCell = null;
 	}
 	
 	public override void _Process(double delta)
@@ -214,7 +231,13 @@ public partial class CellNode : CharacterBody2D
 			} 
 			else if (CellParent.LeafConnectionType == ConnectionType.SpiralOrbit)
 			{
+				this.Rotation = Vector2.Right.AngleTo(GlobalPosition - parentPos);
 				
+				var dist = parentPos - this.GlobalPosition;
+
+				var orbit = Vector2.FromAngle((float)Mathf.DegToRad(sourceAngleDegrees + 360.0 * Mathf.Sin(Root.Instance.ElapsedTime)));
+				
+				targetPosition = parentPos + orbit * OrbitDistance;
 			}
 			
 			// GlobalPosition = GlobalPosition.Lerp(targetPosition, 0.2f);

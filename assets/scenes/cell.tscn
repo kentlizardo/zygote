@@ -1,15 +1,20 @@
-[gd_scene load_steps=5 format=3 uid="uid://cvrtjo653h7sg"]
+[gd_scene load_steps=6 format=3 uid="uid://cvrtjo653h7sg"]
 
 [ext_resource type="Script" path="res://src/game/CellNode.cs" id="1_nyvou"]
 [ext_resource type="Texture2D" uid="uid://by1wclb6xfvra" path="res://assets/textures/earth.png" id="2_ibn3s"]
-[ext_resource type="Texture2D" uid="uid://y6egot61aptm" path="res://assets/textures/shield_2.png" id="3_7jufo"]
+[ext_resource type="Texture2D" uid="uid://chynflos4dyc4" path="res://assets/textures/shield_1.png" id="3_yqtme"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_rhhdv"]
 resource_local_to_scene = true
 radius = 16.0
 
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_sby2c"]
+size = Vector2(42, 42)
+
 [node name="Cell" type="CharacterBody2D" node_paths=PackedStringArray("CellSprite", "LinkLine")]
+process_mode = 1
 collision_mask = 2
+input_pickable = true
 script = ExtResource("1_nyvou")
 CellType = "earth"
 CellSprite = NodePath("CellSprite")
@@ -30,13 +35,13 @@ scale = Vector2(4, 4)
 texture = ExtResource("2_ibn3s")
 
 [node name="CellSprite2" type="Sprite2D" parent="."]
-visible = false
 texture_filter = 1
 scale = Vector2(4, 4)
-texture = ExtResource("3_7jufo")
+texture = ExtResource("3_yqtme")
 
 [node name="Origin" type="Node2D" parent="."]
 
 [node name="HoverArea" type="Area2D" parent="."]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="HoverArea"]
+shape = SubResource("RectangleShape2D_sby2c")

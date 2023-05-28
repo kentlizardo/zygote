@@ -1,12 +1,20 @@
-[gd_scene load_steps=6 format=3 uid="uid://qokryieohj3b"]
+[gd_scene load_steps=7 format=3 uid="uid://qokryieohj3b"]
 
 [ext_resource type="Script" path="res://src/Root.cs" id="1_32avw"]
 [ext_resource type="PackedScene" uid="uid://cvrtjo653h7sg" path="res://assets/scenes/cell.tscn" id="2_qsd4v"]
 [ext_resource type="Texture2D" uid="uid://bvox4tphje0gc" path="res://assets/textures/bg0.png" id="3_hfoha"]
 [ext_resource type="Texture2D" uid="uid://buoqm1tjw6eb0" path="res://assets/textures/bg1.png" id="4_5osri"]
 [ext_resource type="Texture2D" uid="uid://b0d7ov1iogvyw" path="res://assets/textures/bg2.png" id="5_v528y"]
+[ext_resource type="PackedScene" uid="uid://fpyq608lfjju" path="res://assets/scenes/seed.tscn" id="6_bjg5t"]
 
-[node name="root" type="Node2D" node_paths=PackedStringArray("MainCamera")]
+[node name="root" type="Control" node_paths=PackedStringArray("MainCamera")]
+process_mode = 3
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 script = ExtResource("1_32avw")
 RootCellTemplate = ExtResource("2_qsd4v")
 MainCamera = NodePath("Camera2D")
@@ -51,3 +59,26 @@ region_rect = Rect2(0, 0, 576000, 324000)
 position = Vector2(-74, 0)
 
 [node name="Camera2D" type="Camera2D" parent="."]
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="Control" type="Control" parent="CanvasLayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+
+[node name="HBoxContainer" type="HBoxContainer" parent="CanvasLayer/Control"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Seed2" parent="CanvasLayer/Control/HBoxContainer" instance=ExtResource("6_bjg5t")]
+visible = false
+layout_mode = 2

@@ -5,23 +5,72 @@ using Godot.Collections;
 using zygote.game;
 using Array = Godot.Collections.Array;
 
-public partial class Root : Node2D
+public partial class Root : Control
 {
 	public enum GameMode
 	{
-		Battle,
+		Startup,
+		SeedSelection,
 		Fusion,
+		Battle,
 		Lose,
 	}
-
-	public GameMode CurrentMode { get; set; }
+	public static Root Instance { get; private set; }
 
 	[Export] public PackedScene RootCellTemplate = null;
 	[Export] public Camera2D MainCamera { get; set; }
 
 	public CellNode RootCell { get; set; } = null;
 
-	public static Root Instance { get; private set; }
+	public GameMode CurrentMode
+	{
+		get => _currentMode;
+		set
+		{
+			_currentMode = value;
+			switch (_currentMode)
+			{
+				case GameMode.Startup:
+					break;
+				case GameMode.SeedSelection:
+					break;
+				case GameMode.Fusion:
+					break;
+				case GameMode.Battle:
+					break;
+				case GameMode.Lose:
+					break;
+			}
+		}
+	}
+
+	public double ElapsedTime { get; set; } = 0.0f;
+
+	public CellNode HoveredCell
+	{
+		get => _hoveredCell;
+		set
+		{
+			if (_hoveredCell is not null)
+			{
+				var tween = _hoveredCell.CreateTween();
+				tween.TweenProperty(_hoveredCell, "modulate:v", 1.0f, 0.1f);
+				_hoveredCell.Modulate = _hoveredCell.Modulate with { V = 1.0f };
+				tween.TweenProperty(_hoveredCell, "modulate:a", 1.0f, 0.1f);
+			}
+			_hoveredCell = value;
+			if (_hoveredCell is not null)
+			{
+				var tween = _hoveredCell.CreateTween();
+				tween.TweenProperty(_hoveredCell, "modulate:v", 5.0f, 0.1f);
+				tween.TweenProperty(_hoveredCell, "modulate:a", 0.5f, 0.1f);
+			}
+		} 
+	}
+	
+	private CellNode _hoveredCell;
+	private GameMode _currentMode;
+
 	public Root()
 	{
 		Instance = this;
@@ -31,6 +80,8 @@ public partial class Root : Node2D
 	{
 		RootCell = RootCellTemplate.Instantiate() as CellNode;
 		this.AddChild(RootCell, true);
+
+		CurrentMode = GameMode.Startup;
 		for (int i = 0; i < 40; i++)
 		{
 			//RandomBranch(RootCell);
@@ -50,14 +101,6 @@ public partial class Root : Node2D
 		GraftNewNode(newParent);
 		
 	}
-
-	public void RandomDelete(CellNode tree)
-	{
-		Array<CellNode> all = new();
-		GetNodes(tree, ref all);
-		var newParent = all.PickRandom();
-		newParent.Destroy();
-	}
 	
 	public void GraftNewNode(CellNode parentNode = null)
 	{
@@ -70,49 +113,20 @@ public partial class Root : Node2D
 	
 	public override void _Process(double delta)
 	{
+		ElapsedTime += delta;
 		if (RootCell != null)
 			if (MainCamera is not null)
 				MainCamera.Position = MainCamera.Position.Lerp(RootCell.Position, 0.8f);
 		if (Input.IsActionJustPressed("ui_cancel"))
 		{
-			Graft();
+			GetTree().Paused = !GetTree().Paused;
+			GD.Print(GetTree().Paused);
 		}
-		if (Input.IsActionJustPressed("ui_home"))
-		{
-			Branch();
-		}
-		if (Input.IsActionJustPressed("ui_page_down"))
-		{
-			//RandomDelete(RootCell);
-		}
-
-		if (Input.IsActionJustPressed("ui_focus_next"))
-		{
-			Array<CellNode> nodes = new();
-			GetNodes(RootCell, ref nodes);
-			foreach(var i in nodes)
-			{
-				if(i.LeafConnectionType == CellNode.ConnectionType.Fixed)
-					i.LeafConnectionType = CellNode.ConnectionType.Orbit;
-				else
-					i.LeafConnectionType = CellNode.ConnectionType.Fixed;
-			}
-
-			RootCell.UpdateAngle();
-		}
-		if (Input.IsActionJustPressed("ui_page_up"))
-		{
-			Array<CellNode> nodes = new();
-			GetLeaves(RootCell, ref nodes);
-			foreach(var i in nodes)
-			{
-				GD.Print("Grafting to leaf " + i.Name);
-				GraftNewNode(i);
-			}
-		}
- 	}
+	}
 	private void GetNodes(CellNode cell, ref Array<CellNode> array)
 	{
+		if (cell is null)
+			return;
 		array.Add(cell);
 		foreach (CellNode child in cell.CellChildren)
 		{
@@ -121,6 +135,8 @@ public partial class Root : Node2D
 	}
 	private void GetLeaves(CellNode cell, ref Array<CellNode> array)
 	{
+		if (cell is null)
+			return;
 		if (cell.CellChildren.Count > 0)
 		{
 			foreach (CellNode child in cell.CellChildren)
@@ -134,40 +150,14 @@ public partial class Root : Node2D
 		}
 	}
 
-	public void Graft()
-	{
-		GraftNewNode(RootCell);
-	}
-	
-	public void Branch()
-	{
-		Array<CellNode> nodes = new();
-		GetLeaves(RootCell, ref nodes);
-		
-		Array<CellNode> secondToLast = new();
-		foreach(var i in nodes)
-		{
-			if (i.CellParent != null)
-			{
-				if(!secondToLast.Contains(i.CellParent))
-					secondToLast.Add(i.CellParent);
-			}
-		}
-
-		foreach (var i in secondToLast)
-		{
-			GraftNewNode(i);
-		}
-	}
-
 	public override void _PhysicsProcess(double delta)
 	{
-		if (RootCell != null)
+		if (CurrentMode == GameMode.Battle)
 		{
 			//_rootCell.Acceleration = Input.GetAxis("ui_down", "ui_up") * Vector2.Right.Rotated(_rootCell.Rotation) * 100.0f;
 			//_rootCell.Rotate((float)(Input.GetAxis("ui_left", "ui_right") * delta) * 10.0f);
 			var look = GetGlobalMousePosition() - RootCell.GlobalPosition;
-			RootCell.Rotation = (float)Mathf.LerpAngle(RootCell.Rotation, look.Angle(), 0.1f * delta * 30.0f);
+			RootCell.Rotation = (float)Mathf.LerpAngle(RootCell.Rotation, look.Angle(), 0.1f * delta * 25.0f);
 			RootCell.Acceleration = Input.GetVector("ui_left", "ui_right", "ui_up", "ui_down").Normalized() * 100.0f;
 		}
 	}
