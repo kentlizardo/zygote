@@ -1,23 +1,51 @@
-[gd_scene load_steps=5 format=3 uid="uid://qokryieohj3b"]
+[gd_scene load_steps=6 format=3 uid="uid://qokryieohj3b"]
 
 [ext_resource type="Script" path="res://src/Root.cs" id="1_32avw"]
 [ext_resource type="PackedScene" uid="uid://cvrtjo653h7sg" path="res://assets/scenes/cell.tscn" id="2_qsd4v"]
-
-[sub_resource type="Gradient" id="Gradient_mn4gs"]
-
-[sub_resource type="GradientTexture2D" id="GradientTexture2D_kuafb"]
-gradient = SubResource("Gradient_mn4gs")
-width = 256
-height = 256
+[ext_resource type="Texture2D" uid="uid://bvox4tphje0gc" path="res://assets/textures/bg0.png" id="3_hfoha"]
+[ext_resource type="Texture2D" uid="uid://buoqm1tjw6eb0" path="res://assets/textures/bg1.png" id="4_5osri"]
+[ext_resource type="Texture2D" uid="uid://b0d7ov1iogvyw" path="res://assets/textures/bg2.png" id="5_v528y"]
 
 [node name="root" type="Node2D" node_paths=PackedStringArray("MainCamera")]
 script = ExtResource("1_32avw")
 RootCellTemplate = ExtResource("2_qsd4v")
 MainCamera = NodePath("Camera2D")
 
-[node name="Sprite2D" type="Sprite2D" parent="."]
-rotation = 1.5708
-texture = SubResource("GradientTexture2D_kuafb")
+[node name="ParallaxBackground" type="ParallaxBackground" parent="."]
+
+[node name="ParallaxLayer" type="ParallaxLayer" parent="ParallaxBackground"]
+modulate = Color(0.619608, 0.619608, 0.619608, 1)
+texture_repeat = 2
+position = Vector2(1, 0)
+motion_scale = Vector2(0.5, 0.5)
+
+[node name="Sprite2D" type="Sprite2D" parent="ParallaxBackground/ParallaxLayer"]
+texture_repeat = 2
+texture = ExtResource("3_hfoha")
+region_enabled = true
+region_rect = Rect2(0, 0, 576000, 324000)
+
+[node name="ParallaxLayer3" type="ParallaxLayer" parent="ParallaxBackground"]
+texture_repeat = 2
+motion_scale = Vector2(0.25, 0.25)
+
+[node name="Sprite2D" type="Sprite2D" parent="ParallaxBackground/ParallaxLayer3"]
+texture_filter = 1
+texture_repeat = 2
+texture = ExtResource("5_v528y")
+region_enabled = true
+region_rect = Rect2(0, 0, 576000, 324000)
+
+[node name="ParallaxLayer2" type="ParallaxLayer" parent="ParallaxBackground"]
+texture_repeat = 2
+motion_scale = Vector2(0.3, 0.3)
+
+[node name="Sprite2D" type="Sprite2D" parent="ParallaxBackground/ParallaxLayer2"]
+texture_filter = 1
+texture_repeat = 2
+texture = ExtResource("4_5osri")
+region_enabled = true
+region_rect = Rect2(0, 0, 576000, 324000)
 
 [node name="Cell" parent="." instance=ExtResource("2_qsd4v")]
 position = Vector2(-74, 0)

@@ -26,6 +26,10 @@ public partial class CellNode : CharacterBody2D
 	[Export] public Sprite2D CellSprite { get; set; }
 	[Export] public Line2D LinkLine { get; set; }
 
+	[ExportCategory("Cell Properties")]
+	[Export] public float RigidityFactor { get; set; } = 1.0f;
+	[Export] public ConnectionType LeafConnectionType { get; set; } = ConnectionType.Fixed;
+	
 	public CellNode CellParent
 	{
 		get => _cellParent;
@@ -66,13 +70,16 @@ public partial class CellNode : CharacterBody2D
 		TreeHeight = height;
 		this.ProcessPriority = TreeHeight;
 	}
-	private void UpdateAngle()
+
+	public void UpdateAngle()
 	{
 		if (CellParent != null)
 		{
 			var index = CellParent.CellChildren.IndexOf(this);
 			var siblingCount = CellParent.CellChildren.Count;
-			var fan = 360.0f;
+			var fan = CellParent.AngleRange;
+			if (CellParent.LeafConnectionType == ConnectionType.Orbit)
+				fan = 360.0f;
 			var parentAngleIncrement = fan / siblingCount;
 			if (siblingCount > 1)
 				AngleRangeOffset = parentAngleIncrement * index - 0.5f * fan;
@@ -114,8 +121,7 @@ public partial class CellNode : CharacterBody2D
 	
 	public Vector2 Acceleration { get; set; } = Vector2.Zero;
 	public Vector2 Velocity { get; set; } = Vector2.Zero;
-	public ConnectionType LeafConnectionType { get; private set; } = ConnectionType.Fixed;
-	
+
 	private CellNode _cellParent;
 	public float AngleRange { get; private set; } = 360.0f;
 	public float AngleRangeOffset { get; private set; } = 0.0f;
@@ -129,7 +135,12 @@ public partial class CellNode : CharacterBody2D
 	
 	public override void _Process(double delta)
 	{
-		
+		if (CellParent != null)
+		{
+			LinkLine.GlobalRotation = 0.0f;
+			LinkLine.SetPointPosition(0, Vector2.Zero);
+			LinkLine.SetPointPosition(1, CellParent.GlobalPosition - GlobalPosition);
+		}
 	}
 
 	public void Destroy()
@@ -150,29 +161,54 @@ public partial class CellNode : CharacterBody2D
 		this.CallDeferred("free");
 	}
 	
+	// referencing https://forum.unity.com/threads/clamping-angle-between-two-values.853771/ by orionsyndrome
+	private static float ModularClamp(float val, float min, float max, float rangemin = -180f, float rangemax = 180f)
+	{
+		var modulus = Mathf.Abs(rangemax - rangemin);
+		if ((val %= modulus) < 0f)
+		{
+			val += modulus;
+		}
+
+		return Mathf.Clamp(val + Mathf.Min(rangemin, rangemax), min, max);
+	}
+	
 	public override void _PhysicsProcess(double delta)
 	{
 		if (CellParent != null)
 		{
 			var parentPos = CellParent.GlobalPosition;
-			this.Rotation = Vector2.Right.AngleTo(GlobalPosition - parentPos);
-			LinkLine.GlobalRotation = 0.0f;
-			LinkLine.SetPointPosition(0, Vector2.Zero);
-			LinkLine.SetPointPosition(1, parentPos - GlobalPosition);
-
 			var targetPosition = GlobalPosition;
+
+			this.Rotation = Vector2.Right.AngleTo(GlobalPosition - parentPos);
+			var sourceAngleDegrees = Mathf.Wrap(AngleRangeOffset + CellParent.RotationDegrees, -180f, 180f);
 			
 			if (CellParent.LeafConnectionType == ConnectionType.Orbit)
 			{
+				// var dist = parentPos - this.GlobalPosition;
+				// targetPosition = parentPos - norm * OrbitDistance;
 				var dist = parentPos - this.GlobalPosition;
-				var norm = dist.Normalized();
-				targetPosition = parentPos - norm * OrbitDistance;
+				var distLength = (dist.Length() + OrbitDistance) * 0.5f;
+				var norm = Mathf.RadToDeg(dist.Normalized().Angle());
+
+				var halfAngle = AngleRange * 0.5f;
+				var A = sourceAngleDegrees - halfAngle;
+				var B = sourceAngleDegrees + halfAngle;
+				var angle = ModularClamp(norm, A, B);
+				var rads = Mathf.DegToRad(angle);
+				
+				var orbit = Vector2.FromAngle(rads);
+				orbit = (orbit + -dist.Normalized()) * 0.5f;
+
+				targetPosition = parentPos + orbit * distLength;
 			} 
 			else if (CellParent.LeafConnectionType == ConnectionType.Fixed)
 			{
+				this.Rotation = Vector2.Right.AngleTo(GlobalPosition - parentPos);
+				
 				var dist = parentPos - this.GlobalPosition;
 
-				var orbit = Vector2.FromAngle(Mathf.DegToRad(AngleRangeOffset + CellParent.RotationDegrees));
+				var orbit = Vector2.FromAngle(Mathf.DegToRad(sourceAngleDegrees));
 				
 				targetPosition = parentPos + orbit * OrbitDistance;
 			} 
@@ -181,8 +217,10 @@ public partial class CellNode : CharacterBody2D
 				
 			}
 			
+			// GlobalPosition = GlobalPosition.Lerp(targetPosition, 0.2f);
+			targetPosition = GlobalPosition.Lerp(targetPosition, 0.5f);
 			var targetDist = (targetPosition - this.GlobalPosition);
-			GlobalPosition = GlobalPosition.Lerp(targetPosition, 0.2f);
+			this.Velocity = targetDist.Normalized() * 10.0f * targetDist.Length() * RigidityFactor;
 		}
 		this.Velocity += Acceleration * (float)delta;
 		this.Position += Velocity * (float)delta;

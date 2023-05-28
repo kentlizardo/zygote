@@ -7,6 +7,15 @@ using Array = Godot.Collections.Array;
 
 public partial class Root : Node2D
 {
+	public enum GameMode
+	{
+		Battle,
+		Fusion,
+		Lose,
+	}
+
+	public GameMode CurrentMode { get; set; }
+
 	[Export] public PackedScene RootCellTemplate = null;
 	[Export] public Camera2D MainCamera { get; set; }
 
@@ -24,7 +33,7 @@ public partial class Root : Node2D
 		this.AddChild(RootCell, true);
 		for (int i = 0; i < 40; i++)
 		{
-			RandomBranch(RootCell);
+			//RandomBranch(RootCell);
 		}
 	}
 
@@ -53,7 +62,7 @@ public partial class Root : Node2D
 	public void GraftNewNode(CellNode parentNode = null)
 	{
 		var subNode = RootCellTemplate.Instantiate() as CellNode;
-		subNode.CellSprite.Modulate = subNode.CellSprite.Modulate with { A = 0.5f };
+		subNode.CellSprite.Modulate = subNode.CellSprite.Modulate with { A = 1.0f };
 		this.AddChild(subNode, true);
 		if(parentNode != null)
 			subNode.CellParent = parentNode;
@@ -72,12 +81,26 @@ public partial class Root : Node2D
 		{
 			Branch();
 		}
-
-		if (Input.IsActionJustPressed("ui_text_backspace"))
+		if (Input.IsActionJustPressed("ui_page_down"))
 		{
-			RandomDelete(RootCell);
+			//RandomDelete(RootCell);
 		}
-		if (Input.IsActionJustPressed("ui_accept"))
+
+		if (Input.IsActionJustPressed("ui_focus_next"))
+		{
+			Array<CellNode> nodes = new();
+			GetNodes(RootCell, ref nodes);
+			foreach(var i in nodes)
+			{
+				if(i.LeafConnectionType == CellNode.ConnectionType.Fixed)
+					i.LeafConnectionType = CellNode.ConnectionType.Orbit;
+				else
+					i.LeafConnectionType = CellNode.ConnectionType.Fixed;
+			}
+
+			RootCell.UpdateAngle();
+		}
+		if (Input.IsActionJustPressed("ui_page_up"))
 		{
 			Array<CellNode> nodes = new();
 			GetLeaves(RootCell, ref nodes);
@@ -143,7 +166,8 @@ public partial class Root : Node2D
 		{
 			//_rootCell.Acceleration = Input.GetAxis("ui_down", "ui_up") * Vector2.Right.Rotated(_rootCell.Rotation) * 100.0f;
 			//_rootCell.Rotate((float)(Input.GetAxis("ui_left", "ui_right") * delta) * 10.0f);
-			RootCell.LookAt(GetGlobalMousePosition());
+			var look = GetGlobalMousePosition() - RootCell.GlobalPosition;
+			RootCell.Rotation = (float)Mathf.LerpAngle(RootCell.Rotation, look.Angle(), 0.1f * delta * 30.0f);
 			RootCell.Acceleration = Input.GetVector("ui_left", "ui_right", "ui_up", "ui_down").Normalized() * 100.0f;
 		}
 	}
