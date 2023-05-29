@@ -52,6 +52,8 @@ public partial class CellNode : CharacterBody2D
 	[Export] public Node2D CellShieldSprites { get; set; }
 	[Export] public Node2D CellDamageSprites { get; set; }
 	[Export] public Line2D LinkLine { get; set; }
+	[Export] public AudioStreamPlayer2D HitSound { get; set; }
+	[Export] public AudioStreamPlayer2D DestroySound { get; set; }
 
 	[ExportCategory("Cell Properties")]
 	[Export] public float RigidityFactor { get; set; } = 1.0f;
@@ -400,6 +402,9 @@ public partial class CellNode : CharacterBody2D
 		var tw = CreateTween();
 		tw.TweenProperty(this, "modulate:a", 1.0f, 0.25f);
 
+		HitSound.Reparent(Root.Instance);
+		DestroySound.Reparent(Root.Instance);
+		
 		Life = Shield;
 		RefreshDamage();
 	}
@@ -429,6 +434,11 @@ public partial class CellNode : CharacterBody2D
 
 	public void Destroy()
 	{
+		DestroySound.GlobalPosition = GlobalPosition;
+		DestroySound.Play();
+		var timer = GetTree().CreateTimer(3.0f);
+		timer.Timeout += DestroySound.QueueFree;
+		timer.Timeout += HitSound.QueueFree;
 		if (Root.Instance.RootCell == this)
 		{
 			Root.Instance.RootCell = null;
@@ -625,6 +635,8 @@ public partial class CellNode : CharacterBody2D
 
 	public void TakeDamage(int dmg)
 	{
+		HitSound.GlobalPosition = GlobalPosition;
+		HitSound.Play();
 		if (this.CellType == "rock")
 		{
 			var cellTemplate = ResourceLoader.Load<PackedScene>("res://assets/scenes/cells/asteroid.tscn");

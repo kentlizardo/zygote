@@ -63,6 +63,7 @@ public partial class Root : Control
 	[Export] public TextureRect SplashRect = null;
 	[Export] public Sprite2D WaveFinder = null;
 	[Export] public RichTextLabel Subtitle = null;
+	[Export] public AudioStreamPlayer2D FuseSound { get; set; }
 
 	public CellNode RootCell
 	{
@@ -91,7 +92,7 @@ public partial class Root : Control
 		}
 	}
 
-
+	public bool tutorialDone = false;
 	private int highScore = 0;
 	public GameMode CurrentMode
 	{
@@ -105,6 +106,13 @@ public partial class Root : Control
 					var tw = CreateTween();
 					tw.Parallel().TweenProperty(SplashRect, "modulate:a", 0.0f, 1.0f).SetTrans(Tween.TransitionType.Expo);
 					tw.Parallel().TweenProperty(Subtitle, "modulate:a", 0.0f, 1.0f).SetTrans(Tween.TransitionType.Expo);
+					Subtitle.Modulate = Subtitle.Modulate with { A = 1.0f };
+					Subtitle.Text = "";
+					break;
+				case GameMode.Lose:
+					var tw3 = CreateTween();
+					tw3.Parallel().TweenProperty(SplashRect, "modulate:a", 0.0f, 1.0f).SetTrans(Tween.TransitionType.Expo);
+					tw3.Parallel().TweenProperty(Subtitle, "modulate:a", 0.0f, 1.0f).SetTrans(Tween.TransitionType.Expo);
 					Subtitle.Modulate = Subtitle.Modulate with { A = 1.0f };
 					Subtitle.Text = "";
 					break;
@@ -140,7 +148,7 @@ public partial class Root : Control
 					
 					Subtitle.Modulate = Subtitle.Modulate with { A = 0.0f };
 					tw2.Parallel().TweenProperty(Subtitle, "modulate:a", 1.0f, 1.0f).SetTrans(Tween.TransitionType.Expo);
-					Subtitle.Text = "[center]select a node to fuse to.[/center]\n\n";
+					Subtitle.Text = "[center]use your mouse to select a node to fuse into.[/center]\n\n";
 					//GamePaused = true;
 					break;
 				case GameMode.Battle:
@@ -155,13 +163,23 @@ public partial class Root : Control
 					{
 						highScore = playerNodes.Count;
 					}
+
+					if (!tutorialDone)
+					{
+						var tw4 = CreateTween();
+						Subtitle.Modulate = Subtitle.Modulate with { A = 0.0f };
+						tw4.Parallel().TweenProperty(Subtitle, "modulate:a", 1.0f, 1.0f).SetTrans(Tween.TransitionType.Expo);
+						Subtitle.Text = "[center]when you destroy enemy worldtrees,\nyou gain a planet seed to fuse into your worldtree.[/center]\n\n";
+						tutorialDone = true;
+					}
 					break;
 				case GameMode.Lose:
 					var tw3 = CreateTween();
-					
+					tw3.Parallel().TweenProperty(SplashRect, "modulate:a", 1.0f, 1.0f).SetTrans(Tween.TransitionType.Expo);
+
 					Subtitle.Modulate = Subtitle.Modulate with { A = 0.0f };
 					tw3.Parallel().TweenProperty(Subtitle, "modulate:a", 1.0f, 1.0f).SetTrans(Tween.TransitionType.Expo);
-					Subtitle.Text = $"[center]your highest number of planets in your world tree was: \n{highScore}[/center]\n\n";
+					Subtitle.Text = $"[center]the highest number of planets in your world tree was: \n{highScore}\npress space to start again.\n[/center]\n\n";
 					highScore = 0;
 					break;
 			}
@@ -178,7 +196,7 @@ public partial class Root : Control
 		var cellTemplate = ResourceLoader.Load<PackedScene>("res://assets/scenes/cells/" + randomLeaf + ".tscn");
 		RootEnemy = cellTemplate.Instantiate() as CellNode;
 		
-		var pos = RootCell.GlobalPosition + Vector2.FromAngle(Mathf.Tau * GD.Randf()) * (GD.Randf() * 1024 + 512);
+		var pos = RootCell.GlobalPosition + Vector2.FromAngle(Mathf.Tau * GD.Randf()) * (GD.Randf() * 1024 + 1024);
 		if (RootEnemy != null)
 		{
 			RootEnemy.GlobalPosition = pos;
@@ -249,6 +267,13 @@ public partial class Root : Control
 			{
 				CreateSeed("life");
 				createdLife = true;
+				if (!tutorialDone)
+				{
+					var tw2 = CreateTween();
+					Subtitle.Modulate = Subtitle.Modulate with { A = 0.0f };
+					tw2.Parallel().TweenProperty(Subtitle, "modulate:a", 1.0f, 1.0f).SetTrans(Tween.TransitionType.Expo);
+					Subtitle.Text = "[center]this is your root planet.\nif it becomes destroyed, you lose.\nuse the arrow keys to move your world tree.[/center]\n\n";
+				}
 			}
 			else
 			{
@@ -266,6 +291,14 @@ public partial class Root : Control
 			}
 			foreach(var choice in choices)
 				CreateSeed(choice);
+			if (!tutorialDone)
+			{
+				var tw2 = CreateTween();
+				Subtitle.Modulate = Subtitle.Modulate with { A = 0.0f };
+				tw2.Parallel().TweenProperty(Subtitle, "modulate:a", 1.0f, 1.0f).SetTrans(Tween.TransitionType.Expo);
+				Subtitle.Text =
+					"[center]these planets will join your world tree on a mission to conquer the universe!\nuse your mouse to maneuver your world tree and swing them at your enemies.[/center]\n\n";
+			}
 		}
 		else
 		{
@@ -422,6 +455,7 @@ public partial class Root : Control
 						if (_graftedCell.GetParent() is null)
 							this.AddChild(_graftedCell);
 						_graftedCell.CellParent = HoveredCell;
+						FuseSound.Play();
 						HoveredCell = null;
 						CurrentMode = GameMode.Battle;
 					}

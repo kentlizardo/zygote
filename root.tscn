@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3 uid="uid://qokryieohj3b"]
+[gd_scene load_steps=11 format=3 uid="uid://qokryieohj3b"]
 
 [ext_resource type="Script" path="res://src/Root.cs" id="1_32avw"]
 [ext_resource type="PackedScene" uid="uid://cvrtjo653h7sg" path="res://assets/scenes/cell.tscn" id="2_qsd4v"]
@@ -9,8 +9,9 @@
 [ext_resource type="PackedScene" uid="uid://fpyq608lfjju" path="res://assets/scenes/seed.tscn" id="6_bjg5t"]
 [ext_resource type="Texture2D" uid="uid://dxci2e7tejexn" path="res://assets/textures/wavefinder.png" id="7_c3a0s"]
 [ext_resource type="Texture2D" uid="uid://pwinrmn062m6" path="res://assets/textures/splash.png" id="7_oiaiq"]
+[ext_resource type="AudioStream" uid="uid://dpvejpkuqkktw" path="res://assets/audio/fuse.ogg" id="8_383vf"]
 
-[node name="root" type="Control" node_paths=PackedStringArray("MainCamera", "SeedContainer", "SplashRect", "WaveFinder", "Subtitle")]
+[node name="root" type="Control" node_paths=PackedStringArray("MainCamera", "SeedContainer", "SplashRect", "WaveFinder", "Subtitle", "FuseSound")]
 process_mode = 3
 layout_mode = 3
 anchors_preset = 15
@@ -22,10 +23,11 @@ script = ExtResource("1_32avw")
 RootCellTemplate = ExtResource("2_qsd4v")
 MainCamera = NodePath("Camera2D")
 SeedTemplate = ExtResource("6_bjg5t")
-SeedContainer = NodePath("CanvasLayer/Control/HBoxContainer")
+SeedContainer = NodePath("CanvasLayer/Control/VBoxContainer/HBoxContainer")
 SplashRect = NodePath("CanvasLayer/Control/TextureRect")
 WaveFinder = NodePath("Camera2D/Sprite2D")
-Subtitle = NodePath("CanvasLayer/Control/RichTextLabel")
+Subtitle = NodePath("CanvasLayer/Control/VBoxContainer/RichTextLabel")
+FuseSound = NodePath("Camera2D/Fuse")
 
 [node name="ParallaxBackground" type="ParallaxBackground" parent="."]
 
@@ -70,6 +72,11 @@ texture_filter = 1
 scale = Vector2(2, 2)
 texture = ExtResource("7_c3a0s")
 
+[node name="AudioListener2D" type="AudioListener2D" parent="Camera2D"]
+
+[node name="Fuse" type="AudioStreamPlayer2D" parent="Camera2D"]
+stream = ExtResource("8_383vf")
+
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 
 [node name="Control" type="Control" parent="CanvasLayer"]
@@ -80,14 +87,6 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 1
-
-[node name="HBoxContainer" type="HBoxContainer" parent="CanvasLayer/Control"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
 
 [node name="TextureRect" type="TextureRect" parent="CanvasLayer/Control"]
 texture_filter = 1
@@ -105,14 +104,21 @@ grow_horizontal = 2
 grow_vertical = 2
 texture = ExtResource("7_oiaiq")
 
-[node name="RichTextLabel" type="RichTextLabel" parent="CanvasLayer/Control"]
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/Control"]
 layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
-grow_vertical = 0
+grow_vertical = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="CanvasLayer/Control/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="RichTextLabel" type="RichTextLabel" parent="CanvasLayer/Control/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 8
 mouse_filter = 2
 theme_override_colors/default_color = Color(0.870588, 0.870588, 0.870588, 1)
 theme_override_colors/font_shadow_color = Color(0.0156863, 0.0196078, 0.0627451, 1)
