@@ -1,0 +1,15 @@
+[gd_scene load_steps=3 format=3 uid="uid://dwrp0m0f1o1hl"]
+
+[ext_resource type="PackedScene" uid="uid://cvrtjo653h7sg" path="res://assets/scenes/cell.tscn" id="1_yn0gj"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_845q7"]
+resource_local_to_scene = true
+radius = 16.0
+
+[node name="Cell" instance=ExtResource("1_yn0gj")]
+CellType = "ice"
+LeafConnectionType = 2
+SeedDescription = "generates a comet satellite."
+
+[node name="CollisionShape2D" parent="." index="2"]
+shape = SubResource("CircleShape2D_845q7")

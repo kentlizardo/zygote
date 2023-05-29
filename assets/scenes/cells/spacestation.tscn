@@ -1,0 +1,17 @@
+[gd_scene load_steps=3 format=3 uid="uid://d350wk8oin8hd"]
+
+[ext_resource type="PackedScene" uid="uid://cvrtjo653h7sg" path="res://assets/scenes/cell.tscn" id="1_sywht"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_ip6bk"]
+resource_local_to_scene = true
+radius = 16.0
+
+[node name="Cell" instance=ExtResource("1_sywht")]
+CellType = "spacestation"
+LeafConnectionType = 0
+MaximumSatellites = 4
+BaseDamage = 1
+SeedDescription = "fragile but watch out for it's fragments."
+
+[node name="CollisionShape2D" parent="." index="2"]
+shape = SubResource("CircleShape2D_ip6bk")

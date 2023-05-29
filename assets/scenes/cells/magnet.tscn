@@ -1,0 +1,16 @@
+[gd_scene load_steps=3 format=3 uid="uid://icg4iivvlsmu"]
+
+[ext_resource type="PackedScene" uid="uid://cvrtjo653h7sg" path="res://assets/scenes/cell.tscn" id="1_23pu2"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_4k5ox"]
+resource_local_to_scene = true
+radius = 16.0
+
+[node name="Cell" instance=ExtResource("1_23pu2")]
+CellType = "magnet"
+LeafConnectionType = 2
+MaximumSatellites = 2
+Shield = 2
+
+[node name="CollisionShape2D" parent="." index="1"]
+shape = SubResource("CircleShape2D_4k5ox")

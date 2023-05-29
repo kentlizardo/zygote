@@ -1,0 +1,17 @@
+[gd_scene load_steps=3 format=3 uid="uid://7t7xbhfm3ri8"]
+
+[ext_resource type="PackedScene" uid="uid://cvrtjo653h7sg" path="res://assets/scenes/cell.tscn" id="1_3uea1"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_lql66"]
+resource_local_to_scene = true
+radius = 16.0
+
+[node name="Cell" instance=ExtResource("1_3uea1")]
+CellType = "magma"
+RigidityFactor = 0.2
+MaximumSatellites = 0
+BaseDamage = 3
+Shield = 2
+
+[node name="CollisionShape2D" parent="." index="2"]
+shape = SubResource("CircleShape2D_lql66")

@@ -1,0 +1,17 @@
+[gd_scene load_steps=3 format=3 uid="uid://d3v6bskqfbua2"]
+
+[ext_resource type="PackedScene" uid="uid://cvrtjo653h7sg" path="res://assets/scenes/cell.tscn" id="1_yhdb8"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_6r62b"]
+resource_local_to_scene = true
+radius = 16.0
+
+[node name="Cell" instance=ExtResource("1_yhdb8")]
+CellType = "branch"
+RigidityFactor = 1.5
+MaximumSatellites = 2
+SeedDescription = "this planet reconnects it's parent and satellites if it dies.
+"
+
+[node name="CollisionShape2D" parent="." index="2"]
+shape = SubResource("CircleShape2D_6r62b")

@@ -42,6 +42,41 @@ public partial class Seed : Control
 		Icon.Texture = ResourceLoader.Load<Texture2D>("res://assets/textures/" + seedName.ToLower() + ".png");
 		var cellTemplate = ResourceLoader.Load<PackedScene>("res://assets/scenes/cells/" + seedName.ToLower() + ".tscn");
 		SeedCell = cellTemplate.Instantiate() as CellNode;
+
+		var orbitStrength = SeedCell.RigidityFactor * 100.0f;
+		int percent = (int)orbitStrength;
+
+		var leafConnectionText = "";
+		switch (SeedCell.LeafConnectionType)
+		{
+			case CellNode.ConnectionType.Fixed:
+				leafConnectionText = "fixed satellites";
+				break;
+			case CellNode.ConnectionType.Orbit:
+				leafConnectionText = "freely orbiting satellites";
+				break;
+			case CellNode.ConnectionType.SpiralOrbit:
+				leafConnectionText = "satellites with spinning orbit";
+				break;
+		}
+		
+		var textDump = $@"[center]{SeedCell.CellType} planet seed
+
+
+health: {SeedCell.Shield}
+damage: {SeedCell.BaseDamage}
+max satellites: {SeedCell.MaximumSatellites}
+orbit strength: {percent}%
+leaf connection: {leafConnectionText}
+
+{SeedCell.SeedDescription}
+
+
+[url][wave amp=5.0 freq=3.0]fuse this seed[/wave][/url]
+
+";
+
+		Text.Text = textDump;
 		
 		var tween = this.CreateTween();	
 		tween.TweenProperty(this, "modulate:a", 1.0f, 1.0f).SetEase(Tween.EaseType.In).SetTrans(Tween.TransitionType.Sine);

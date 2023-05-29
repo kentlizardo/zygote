@@ -1,12 +1,51 @@
 using Godot;
 using System;
+using System.Numerics;
 using Godot.Collections;
 using zygote.game;
 using Array = Godot.Collections.Array;
+using Vector2 = Godot.Vector2;
 
 public partial class Root : Control
 {
-	public static readonly string[] Seeds = {"life"};
+	public static readonly string[] Seeds =
+	{
+		"life",
+		"branch",
+		"magnet",
+		"vine",
+		"star",
+		"virus",
+		"nebulous",
+		
+		"leaf",
+		"spacestation",
+		"ice",
+		"spike",
+		"rock",
+		"magma",
+	};
+	public static readonly string[] StructureSeeds =
+	{
+		"life",
+		"branch",
+		"magnet",
+		"vine",
+		"star",
+		"virus",
+		"nebulous",
+	};
+	public static readonly string[] StarterSeeds =
+	{
+		"leaf",
+		"spacestation",
+		"ice",
+		"nebulous",
+		"spike",
+		"rock",
+		"magma",
+	};
+	
 	public enum GameMode
 	{
 		Startup,
@@ -21,6 +60,9 @@ public partial class Root : Control
 	[Export] public Camera2D MainCamera { get; set; }
 	[Export] public PackedScene SeedTemplate = null;
 	[Export] public HBoxContainer SeedContainer = null;
+	[Export] public TextureRect SplashRect = null;
+	[Export] public Sprite2D WaveFinder = null;
+	[Export] public RichTextLabel Subtitle = null;
 
 	public CellNode RootCell
 	{
@@ -28,7 +70,10 @@ public partial class Root : Control
 		set
 		{
 			_rootCell = value;
-			_rootCell.TeamOwner = CellNode.Team.Player;
+			if(_rootCell is not null)
+				_rootCell.TeamOwner = CellNode.Team.Player;
+			else
+				CurrentMode = GameMode.Lose;
 		}
 	}
 	
@@ -42,29 +87,82 @@ public partial class Root : Control
 				CurrentMode = GameMode.SeedSelection;
 			}
 			_rootEnemy = value;
-			_rootEnemy.TeamOwner = CellNode.Team.Enemy;
+			if (_rootEnemy != null) _rootEnemy.TeamOwner = CellNode.Team.Enemy;
 		}
 	}
 
+
+	private int highScore = 0;
 	public GameMode CurrentMode
 	{
 		get => _currentMode;
 		set
 		{
+			switch (_currentMode)
+			{
+				case GameMode.Startup:
+					highScore = 0;
+					var tw = CreateTween();
+					tw.Parallel().TweenProperty(SplashRect, "modulate:a", 0.0f, 1.0f).SetTrans(Tween.TransitionType.Expo);
+					tw.Parallel().TweenProperty(Subtitle, "modulate:a", 0.0f, 1.0f).SetTrans(Tween.TransitionType.Expo);
+					Subtitle.Modulate = Subtitle.Modulate with { A = 1.0f };
+					Subtitle.Text = "";
+					break;
+				case GameMode.SeedSelection:
+					//GamePaused = false;
+					break;
+				case GameMode.Fusion:
+					var tw2 = CreateTween();
+					Subtitle.Modulate = Subtitle.Modulate with { A = 1.0f };
+					tw2.Parallel().TweenProperty(Subtitle, "modulate:a", 0.0f, 1.0f).SetTrans(Tween.TransitionType.Expo);
+					Subtitle.Text = "";
+					//GamePaused = false;
+					break;
+			}
 			_currentMode = value;
 			switch (_currentMode)
 			{
 				case GameMode.Startup:
+					var tw = CreateTween();
+					SplashRect.Modulate = SplashRect.Modulate with { A = 0.0f };
+					tw.Parallel().TweenProperty(SplashRect, "modulate:a", 1.0f, 1.0f).SetTrans(Tween.TransitionType.Expo);
+					
+					Subtitle.Modulate = Subtitle.Modulate with { A = 0.0f };
+					tw.Parallel().TweenProperty(Subtitle, "modulate:a", 1.0f, 1.0f).SetTrans(Tween.TransitionType.Expo);
+					Subtitle.Text = "[center]press space->start.[/center]\n\n";
 					break;
 				case GameMode.SeedSelection:
 					SeedSelect();
+					//GamePaused = true;
 					break;
 				case GameMode.Fusion:
+					var tw2 = CreateTween();
+					
+					Subtitle.Modulate = Subtitle.Modulate with { A = 0.0f };
+					tw2.Parallel().TweenProperty(Subtitle, "modulate:a", 1.0f, 1.0f).SetTrans(Tween.TransitionType.Expo);
+					Subtitle.Text = "[center]select a node to fuse to.[/center]\n\n";
+					//GamePaused = true;
 					break;
 				case GameMode.Battle:
 					CreateEnemy();
+					Array<CellNode> playerNodes = new();
+					GetNodes(RootCell, ref playerNodes);
+					foreach (var node in playerNodes)
+					{
+						node.Regenerate();
+					}
+					if (playerNodes.Count > highScore)
+					{
+						highScore = playerNodes.Count;
+					}
 					break;
 				case GameMode.Lose:
+					var tw3 = CreateTween();
+					
+					Subtitle.Modulate = Subtitle.Modulate with { A = 0.0f };
+					tw3.Parallel().TweenProperty(Subtitle, "modulate:a", 1.0f, 1.0f).SetTrans(Tween.TransitionType.Expo);
+					Subtitle.Text = $"[center]your highest number of planets in your world tree was: \n{highScore}[/center]\n\n";
+					highScore = 0;
 					break;
 			}
 		}
@@ -76,7 +174,7 @@ public partial class Root : Control
 		GetNodes(RootCell, ref playerNodes);
 		int playerLevel = playerNodes.Count;
 
-		var randomLeaf = Seeds[GD.Randi() % Seeds.Length];
+		var randomLeaf = StructureSeeds[GD.Randi() % StructureSeeds.Length];
 		var cellTemplate = ResourceLoader.Load<PackedScene>("res://assets/scenes/cells/" + randomLeaf + ".tscn");
 		RootEnemy = cellTemplate.Instantiate() as CellNode;
 		
@@ -84,24 +182,40 @@ public partial class Root : Control
 		if (RootEnemy != null)
 		{
 			RootEnemy.GlobalPosition = pos;
-
 			this.AddChild(RootEnemy);
 		}
 
-		for (int i = 0; i < playerLevel; i++)
+		var proportion = GD.Randf();
+		int minimumStructures = (int)(proportion * (playerLevel - 1));
+		int randomNodes = (playerLevel - 1) - minimumStructures;
+
+		for (int i = 0; i < minimumStructures; i++)
 		{
-			GraftEnemy();
+			GraftEnemy(true);
+		}
+		for (int i = 0; i < randomNodes; i++)
+		{
+			GraftEnemy(false);
+		}
+
+		Array<CellNode> enemyNodes = new();
+		GetNodes(RootEnemy, ref enemyNodes);
+		foreach (var node in enemyNodes)
+		{
+			node.Regenerate();
 		}
 	}
 
-	private void GraftEnemy()
+	private void GraftEnemy(bool structureOnly)
 	{
 		Array<CellNode> nodes = new Array<CellNode>();
 		GetNodes(RootEnemy, ref nodes);
 		
 		var newParent = nodes.PickRandom();
 		
-		var randomLeaf = Seeds[GD.Randi() % Seeds.Length];
+		string randomLeaf = Seeds[GD.Randi() % Seeds.Length];
+		if(structureOnly)
+			randomLeaf = StructureSeeds[GD.Randi() % StructureSeeds.Length];
 		var cellTemplate = ResourceLoader.Load<PackedScene>("res://assets/scenes/cells/" + randomLeaf + ".tscn");
 		var newCell = cellTemplate.Instantiate() as CellNode;
 		if (newParent != RootEnemy)
@@ -116,6 +230,8 @@ public partial class Root : Control
 		newCell.CellParent = newParent;
 	}
 
+	private bool createdLife = false;
+	
 	public async void SeedSelect()
 	{
 		if (SeedContainer.GetChildren().Count > 0)
@@ -129,13 +245,39 @@ public partial class Root : Control
 		int treeLevel = nodes.Count;
 		if (treeLevel == 0)
 		{
-			CreateSeed("life");
+			if (!createdLife)
+			{
+				CreateSeed("life");
+				createdLife = true;
+			}
+			else
+			{
+				CreateSeed(StructureSeeds[GD.Randi() % StructureSeeds.Length]);
+			}
+		}
+		else if (treeLevel == 1)
+		{
+			Array<string> choices = new();
+			while (choices.Count < 3)
+			{
+				var seed = StarterSeeds[GD.Randi() % StarterSeeds.Length];
+				if(!choices.Contains(seed))
+					choices.Add(seed);
+			}
+			foreach(var choice in choices)
+				CreateSeed(choice);
 		}
 		else
 		{
 			Array<string> choices = new();
-			for(uint i = 0; i < 3; i++)
-				choices.Add(Seeds[GD.Randi() % Seeds.Length]);
+			while (choices.Count < 3)
+			{
+				var seed = Seeds[GD.Randi() % Seeds.Length];
+				if (GD.Randf() <= 0.75f)
+					seed = StructureSeeds[GD.Randi() % StructureSeeds.Length];
+				if(!choices.Contains(seed))
+					choices.Add(seed);
+			}
 			foreach(var choice in choices)
 				CreateSeed(choice);
 		}
@@ -263,17 +405,22 @@ public partial class Root : Control
 				if (Input.IsActionJustPressed("ui_accept"))
 					CurrentMode = GameMode.SeedSelection;
 				break;
+			case GameMode.Lose:
+				if (Input.IsActionJustPressed("ui_accept"))
+					CurrentMode = GameMode.SeedSelection;
+				break;
 			case GameMode.Fusion:
 				if (Input.IsActionJustPressed("click"))
 				{
 					GD.Print("Pressed!");
 					if (HoveredCell is not null)
 					{
-						if (RootCell != null)
+						if (RootCell is not null)
 							_graftedCell.GlobalPosition = RootCell.GlobalPosition +
 							                              Vector2.FromAngle(GD.Randf() * Mathf.Tau) * GD.Randf() *
 							                              256.0f;
-						this.AddChild(_graftedCell);
+						if (_graftedCell.GetParent() is null)
+							this.AddChild(_graftedCell);
 						_graftedCell.CellParent = HoveredCell;
 						HoveredCell = null;
 						CurrentMode = GameMode.Battle;
@@ -332,6 +479,16 @@ public partial class Root : Control
 			var hostile = RootCell.GlobalPosition - RootEnemy.GlobalPosition;
 			RootEnemy.Rotation = (float)Mathf.LerpAngle(RootEnemy.Rotation, hostile.Angle(), 0.1f * delta * 25.0f);
 			RootEnemy.Drive = hostile.Normalized();
+
+			var enemyDist = RootEnemy.GlobalPosition - RootCell.GlobalPosition;
+			WaveFinder.Rotation = (enemyDist).Angle();
+			WaveFinder.Visible = true;
+			const float rec = 1f / 256f;
+			WaveFinder.Modulate = WaveFinder.Modulate with { A = rec * (enemyDist.Length() - 256.0f) };
+		}
+		else
+		{
+			WaveFinder.Visible = false;
 		}
 	}
 }

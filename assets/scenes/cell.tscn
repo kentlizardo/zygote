@@ -1,8 +1,13 @@
-[gd_scene load_steps=6 format=3 uid="uid://cvrtjo653h7sg"]
+[gd_scene load_steps=11 format=3 uid="uid://cvrtjo653h7sg"]
 
 [ext_resource type="Script" path="res://src/game/CellNode.cs" id="1_nyvou"]
-[ext_resource type="Texture2D" uid="uid://by1wclb6xfvra" path="res://assets/textures/life.png" id="2_w41a0"]
+[ext_resource type="Texture2D" uid="uid://bhvydxfk5lavg" path="res://assets/textures/spacestation.png" id="2_viwhk"]
+[ext_resource type="Texture2D" uid="uid://y6egot61aptm" path="res://assets/textures/shield_2.png" id="3_7jufo"]
 [ext_resource type="Texture2D" uid="uid://chynflos4dyc4" path="res://assets/textures/shield_1.png" id="3_yqtme"]
+[ext_resource type="Texture2D" uid="uid://cpr8qo44cf8p8" path="res://assets/textures/damage_3.png" id="4_4em8f"]
+[ext_resource type="Texture2D" uid="uid://bqig2xnb3uekw" path="res://assets/textures/damage_1.png" id="4_a3jrd"]
+[ext_resource type="Texture2D" uid="uid://cqa36jmaatkv" path="res://assets/textures/shield_3.png" id="5_ea0pp"]
+[ext_resource type="Texture2D" uid="uid://dvp30b6q73dms" path="res://assets/textures/damage_2.png" id="7_fvbel"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_rhhdv"]
 resource_local_to_scene = true
@@ -11,7 +16,7 @@ radius = 16.0
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_sby2c"]
 size = Vector2(42, 42)
 
-[node name="Cell" type="CharacterBody2D" node_paths=PackedStringArray("CellSprite", "LinkLine")]
+[node name="Cell" type="CharacterBody2D" node_paths=PackedStringArray("CellSprite", "CellShieldSprites", "CellDamageSprites", "LinkLine")]
 process_mode = 1
 collision_layer = 0
 collision_mask = 0
@@ -19,7 +24,14 @@ input_pickable = true
 script = ExtResource("1_nyvou")
 CellType = "life"
 CellSprite = NodePath("CellSprite")
+CellShieldSprites = NodePath("CellShield")
+CellDamageSprites = NodePath("CellDamage")
 LinkLine = NodePath("Line2D")
+
+[node name="CellSprite" type="Sprite2D" parent="."]
+texture_filter = 1
+scale = Vector2(4, 4)
+texture = ExtResource("2_viwhk")
 
 [node name="Line2D" type="Line2D" parent="."]
 z_index = -1
@@ -30,17 +42,48 @@ antialiased = true
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("CircleShape2D_rhhdv")
 
-[node name="CellSprite" type="Sprite2D" parent="."]
-texture_filter = 1
-scale = Vector2(4, 4)
-texture = ExtResource("2_w41a0")
+[node name="CellShield" type="Node2D" parent="."]
 
-[node name="CellSprite2" type="Sprite2D" parent="."]
+[node name="CellShield" type="Sprite2D" parent="CellShield"]
+modulate = Color(1, 1, 1, 0.498039)
 texture_filter = 1
 scale = Vector2(4, 4)
 texture = ExtResource("3_yqtme")
 
+[node name="CellShield2" type="Sprite2D" parent="CellShield"]
+modulate = Color(1, 1, 1, 0.498039)
+texture_filter = 1
+scale = Vector2(4, 4)
+texture = ExtResource("3_7jufo")
+
+[node name="CellShield3" type="Sprite2D" parent="CellShield"]
+modulate = Color(1, 1, 1, 0.498039)
+texture_filter = 1
+scale = Vector2(4, 4)
+texture = ExtResource("5_ea0pp")
+
+[node name="CellDamage" type="Node2D" parent="."]
+
+[node name="CellDamage" type="Sprite2D" parent="CellDamage"]
+modulate = Color(1, 0.368627, 0.356863, 0.498039)
+texture_filter = 1
+scale = Vector2(4, 4)
+texture = ExtResource("4_a3jrd")
+
+[node name="CellDamage2" type="Sprite2D" parent="CellDamage"]
+modulate = Color(1, 0.368627, 0.356863, 0.498039)
+texture_filter = 1
+scale = Vector2(4, 4)
+texture = ExtResource("7_fvbel")
+
+[node name="CellDamage3" type="Sprite2D" parent="CellDamage"]
+modulate = Color(1, 0.368627, 0.356863, 0.498039)
+texture_filter = 1
+scale = Vector2(4, 4)
+texture = ExtResource("4_4em8f")
+
 [node name="Origin" type="Node2D" parent="."]
+visible = false
 
 [node name="HoverArea" type="Area2D" parent="."]
 

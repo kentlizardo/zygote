@@ -1,0 +1,15 @@
+[gd_scene load_steps=3 format=3 uid="uid://clsfqblcs4yr6"]
+
+[ext_resource type="PackedScene" uid="uid://cvrtjo653h7sg" path="res://assets/scenes/cell.tscn" id="1_iq1ug"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_4b2wm"]
+resource_local_to_scene = true
+radius = 16.0
+
+[node name="Cell" instance=ExtResource("1_iq1ug")]
+CellType = "virus"
+MaximumSatellites = 2
+SeedDescription = "[unknown]"
+
+[node name="CollisionShape2D" parent="." index="2"]
+shape = SubResource("CircleShape2D_4b2wm")
