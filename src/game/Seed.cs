@@ -1,6 +1,6 @@
 using Godot;
-using System;
-using zygote.game;
+
+namespace worldtrees.game;
 
 public partial class Seed : Control
 {
@@ -97,7 +97,7 @@ leaf connection: {leafConnectionText}
 
 	private void Click(Variant meta)
 	{
-		Root.Instance.GraftedCell = SeedCell;
+		worldtrees.Root.Instance.GraftedCell = SeedCell;
 	}
 	
 	public override void _Process(double delta)

@@ -1,13 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Security.Principal;
-using System.Threading.Tasks;
 using Godot;
 using Godot.Collections;
 
-namespace zygote.game;
+namespace worldtrees.game;
 
 public partial class CellNode : CharacterBody2D
 {
@@ -254,7 +250,7 @@ public partial class CellNode : CharacterBody2D
 					newCell.GlobalPosition = GlobalPosition +
 					                         Vector2.FromAngle(GD.Randf() * Mathf.Tau) * GD.Randf() *
 					                         128.0f;
-					Root.Instance.AddChild(newCell);
+					worldtrees.Root.Instance.AddChild(newCell);
 					newCell.CellParent = this;
 				}
 			}
@@ -267,7 +263,7 @@ public partial class CellNode : CharacterBody2D
 					newCell.GlobalPosition = GlobalPosition +
 					                         Vector2.FromAngle(GD.Randf() * Mathf.Tau) * GD.Randf() *
 					                         64.0f;
-					Root.Instance.AddChild(newCell);
+					worldtrees.Root.Instance.AddChild(newCell);
 					newCell.CellParent = this;
 				}
 
@@ -278,7 +274,7 @@ public partial class CellNode : CharacterBody2D
 						newCell2.GlobalPosition = GlobalPosition +
 						                          Vector2.FromAngle(GD.Randf() * Mathf.Tau) * GD.Randf() *
 						                          64.0f;
-						Root.Instance.AddChild(newCell2);
+						worldtrees.Root.Instance.AddChild(newCell2);
 						newCell2.CellParent = this;
 					}
 				}
@@ -293,7 +289,7 @@ public partial class CellNode : CharacterBody2D
 					newCell.GlobalPosition = GlobalPosition +
 					                         Vector2.FromAngle(GD.Randf() * Mathf.Tau) * GD.Randf() *
 					                         128.0f;
-					Root.Instance.AddChild(newCell);
+					worldtrees.Root.Instance.AddChild(newCell);
 					newCell.CellParent = this;
 				}
 			}
@@ -306,7 +302,7 @@ public partial class CellNode : CharacterBody2D
 					newCell.GlobalPosition = GlobalPosition +
 					                         Vector2.FromAngle(GD.Randf() * Mathf.Tau) * GD.Randf() *
 					                         128.0f;
-					Root.Instance.AddChild(newCell);
+					worldtrees.Root.Instance.AddChild(newCell);
 					newCell.CellParent = this;
 				}
 			}
@@ -339,7 +335,7 @@ public partial class CellNode : CharacterBody2D
 			if (siblingCount > 1)
 				AngleRangeOffset = parentAngleIncrement * index - 0.5f * fan;
 			else
-				AngleRangeOffset = parentAngleIncrement * index;
+				AngleRangeOffset = parentAngleIncrement * index - 0.5f * fan;
 			AngleRange = parentAngleIncrement;
 			
 			// Collision check for 2 siblings, and iteratively increase orbit distance until there is sufficient distance between 2 neighboring siblings
@@ -402,8 +398,8 @@ public partial class CellNode : CharacterBody2D
 		var tw = CreateTween();
 		tw.TweenProperty(this, "modulate:a", 1.0f, 0.25f);
 
-		HitSound.Reparent(Root.Instance);
-		DestroySound.Reparent(Root.Instance);
+		HitSound.Reparent(worldtrees.Root.Instance);
+		DestroySound.Reparent(worldtrees.Root.Instance);
 		
 		Life = Shield;
 		RefreshDamage();
@@ -412,14 +408,14 @@ public partial class CellNode : CharacterBody2D
 	private void MouseEnter()
 	{
 		if(this.TeamOwner == Team.Player)
-			if(Root.Instance.CurrentMode == Root.GameMode.Fusion && this.CellChildren.Count < this.MaximumSatellites)
-				Root.Instance.HoveredCell = this;
+			if(worldtrees.Root.Instance.CurrentMode == worldtrees.Root.GameMode.Fusion && this.CellChildren.Count < this.MaximumSatellites)
+				worldtrees.Root.Instance.HoveredCell = this;
 	}
 	
 	private void MouseExit()
 	{
-		if(Root.Instance.HoveredCell == this)
-			Root.Instance.HoveredCell = null;
+		if(worldtrees.Root.Instance.HoveredCell == this)
+			worldtrees.Root.Instance.HoveredCell = null;
 	}
 	
 	public override void _Process(double delta)
@@ -439,21 +435,21 @@ public partial class CellNode : CharacterBody2D
 		var timer = GetTree().CreateTimer(3.0f);
 		timer.Timeout += DestroySound.QueueFree;
 		timer.Timeout += HitSound.QueueFree;
-		if (Root.Instance.RootCell == this)
+		if (worldtrees.Root.Instance.RootCell == this)
 		{
-			Root.Instance.RootCell = null;
+			worldtrees.Root.Instance.RootCell = null;
 		}
-		if (Root.Instance.RootEnemy == this)
+		if (worldtrees.Root.Instance.RootEnemy == this)
 		{
-			Root.Instance.RootEnemy = null;
+			worldtrees.Root.Instance.RootEnemy = null;
 		}
-		if (Root.Instance.HoveredCell == this)
+		if (worldtrees.Root.Instance.HoveredCell == this)
 		{
-			Root.Instance.HoveredCell = null;
+			worldtrees.Root.Instance.HoveredCell = null;
 		}
-		if (Root.Instance.GraftedCell == this)
+		if (worldtrees.Root.Instance.GraftedCell == this)
 		{
-			Root.Instance.GraftedCell = null;
+			worldtrees.Root.Instance.GraftedCell = null;
 		}
 		foreach(var child in CellChildren.Duplicate())
 		{
@@ -484,8 +480,8 @@ public partial class CellNode : CharacterBody2D
 	
 	public override void _PhysicsProcess(double delta)
 	{
-		if (Root.Instance.CurrentMode == Root.GameMode.Fusion ||
-		    Root.Instance.CurrentMode == Root.GameMode.SeedSelection)
+		if (worldtrees.Root.Instance.CurrentMode == worldtrees.Root.GameMode.Fusion ||
+		    worldtrees.Root.Instance.CurrentMode == worldtrees.Root.GameMode.SeedSelection)
 			return;
 		if(InvincibleFrames > 0.0f)
 			InvincibleFrames -= (float)delta;
@@ -534,7 +530,7 @@ public partial class CellNode : CharacterBody2D
 				
 				var dist = parentPos - this.GlobalPosition;
 
-				var orbit = Vector2.FromAngle((float)Mathf.DegToRad(sourceAngleDegrees + 180.0 * Root.Instance.ElapsedTime));
+				var orbit = Vector2.FromAngle((float)Mathf.DegToRad(sourceAngleDegrees + 180.0 * worldtrees.Root.Instance.ElapsedTime));
 				
 				targetPosition = parentPos + orbit * OrbitDistance;
 			}
@@ -647,7 +643,7 @@ public partial class CellNode : CharacterBody2D
 				                         Vector2.FromAngle(GD.Randf() * Mathf.Tau) * GD.Randf() *
 				                         64.0f;
 				if (newCell.GetParent() is null)
-					Root.Instance.AddChild(newCell);
+					worldtrees.Root.Instance.AddChild(newCell);
 				newCell.CellParent = this;
 			}
 		}

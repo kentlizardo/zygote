@@ -8,7 +8,7 @@
 [ext_resource type="Texture2D" uid="uid://bqig2xnb3uekw" path="res://assets/textures/damage_1.png" id="4_a3jrd"]
 [ext_resource type="Texture2D" uid="uid://cqa36jmaatkv" path="res://assets/textures/shield_3.png" id="5_ea0pp"]
 [ext_resource type="Texture2D" uid="uid://dvp30b6q73dms" path="res://assets/textures/damage_2.png" id="7_fvbel"]
-[ext_resource type="AudioStream" uid="uid://b1ni5ckoqocx" path="res://assets/audio/hit.ogg" id="9_gnnau"]
+[ext_resource type="AudioStream" uid="uid://ch5wpmo2myexj" path="res://assets/audio/hit.ogg" id="9_gnnau"]
 [ext_resource type="AudioStream" uid="uid://dg4kvfyh0hv82" path="res://assets/audio/smash.ogg" id="10_mlpis"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_rhhdv"]

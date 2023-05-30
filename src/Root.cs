@@ -1,10 +1,9 @@
 using Godot;
-using System;
-using System.Numerics;
 using Godot.Collections;
-using zygote.game;
-using Array = Godot.Collections.Array;
+using CellNode = worldtrees.game.CellNode;
 using Vector2 = Godot.Vector2;
+
+namespace worldtrees;
 
 public partial class Root : Control
 {
@@ -318,7 +317,7 @@ public partial class Root : Control
 
 	private void CreateSeed(string seedName)
 	{
-		var seed = SeedTemplate.Instantiate() as Seed;
+		var seed = SeedTemplate.Instantiate() as game.Seed;
 		SeedContainer?.AddChild(seed);
 		if (seed != null) seed.LoadSeed(seedName);
 	}
@@ -332,7 +331,7 @@ public partial class Root : Control
 		{
 			foreach(var child in SeedContainer.GetChildren().Duplicate())
 			{
-				if(child is Seed seed)
+				if(child is game.Seed seed)
 					seed.Destroy();
 			}
 			_graftedCell = value;

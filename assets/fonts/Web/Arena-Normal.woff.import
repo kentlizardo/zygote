@@ -3,12 +3,12 @@
 importer="font_data_dynamic"
 type="FontFile"
 uid="uid://blys6n8hkg6xw"
-path="res://.godot/imported/Arena-Normal.woff-ae7b5a8f29e1e9a2be59e381a50e4de2.fontdata"
+path="res://.godot/imported/Arena-Normal.woff-4396aa5420fd96588ee9d9d4ed820bc0.fontdata"
 
 [deps]
 
-source_file="res://assets/fonts/Web/Arena-Normal.woff"
-dest_files=["res://.godot/imported/Arena-Normal.woff-ae7b5a8f29e1e9a2be59e381a50e4de2.fontdata"]
+source_file="res://assets/fonts/web/Arena-Normal.woff"
+dest_files=["res://.godot/imported/Arena-Normal.woff-4396aa5420fd96588ee9d9d4ed820bc0.fontdata"]
 
 [params]
 
@@ -27,7 +27,12 @@ Fallbacks=null
 fallbacks=[]
 Compress=null
 compress=true
-preload=[]
+preload=[{
+"chars": [],
+"glyphs": [],
+"name": "New Configuration",
+"size": Vector2i(16, 0)
+}]
 language_support={}
 script_support={}
 opentype_features={}

@@ -3,12 +3,12 @@
 importer="font_data_dynamic"
 type="FontFile"
 uid="uid://blussxda13lyc"
-path="res://.godot/imported/Arena-Normal.otf-9f14aedacf2c4f5ff6ddb159191e7b87.fontdata"
+path="res://.godot/imported/Arena-Normal.otf-043aff3b6ecb96e95fa3194f5daa913d.fontdata"
 
 [deps]
 
-source_file="res://assets/fonts/Desktop/Arena-Normal.otf"
-dest_files=["res://.godot/imported/Arena-Normal.otf-9f14aedacf2c4f5ff6ddb159191e7b87.fontdata"]
+source_file="res://assets/fonts/desktop/Arena-Normal.otf"
+dest_files=["res://.godot/imported/Arena-Normal.otf-043aff3b6ecb96e95fa3194f5daa913d.fontdata"]
 
 [params]
 
@@ -31,7 +31,8 @@ preload=[{
 "chars": [],
 "glyphs": [],
 "name": "New Configuration",
-"size": Vector2i(16, 0)
+"size": Vector2i(16, 0),
+"variation_embolden": 0.0
 }]
 language_support={}
 script_support={}

@@ -1,6 +1,6 @@
 ﻿Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "zygote", "zygote.csproj", "{5E6D03C8-7570-4F26-BCA5-40F50BB1ACD0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "worldtrees", "worldtrees.csproj", "{5E6D03C8-7570-4F26-BCA5-40F50BB1ACD0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

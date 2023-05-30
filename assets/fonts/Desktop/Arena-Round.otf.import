@@ -3,12 +3,12 @@
 importer="font_data_dynamic"
 type="FontFile"
 uid="uid://dbr4t6bgx1gon"
-path="res://.godot/imported/Arena-Round.otf-2b1e748e9114130dcbc8156c6abe5d4b.fontdata"
+path="res://.godot/imported/Arena-Round.otf-420532a644f749403e54f949db735857.fontdata"
 
 [deps]
 
-source_file="res://assets/fonts/Desktop/Arena-Round.otf"
-dest_files=["res://.godot/imported/Arena-Round.otf-2b1e748e9114130dcbc8156c6abe5d4b.fontdata"]
+source_file="res://assets/fonts/desktop/Arena-Round.otf"
+dest_files=["res://.godot/imported/Arena-Round.otf-420532a644f749403e54f949db735857.fontdata"]
 
 [params]
 
@@ -31,7 +31,8 @@ preload=[{
 "chars": [],
 "glyphs": [],
 "name": "New Configuration",
-"size": Vector2i(16, 0)
+"size": Vector2i(16, 0),
+"variation_embolden": 0.0
 }]
 language_support={}
 script_support={}
